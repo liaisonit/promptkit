@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptKit Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background-color: #FFF;
+            color: #000;
+        }
+        .page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 1px solid #EAEAEA;
+        }
+        .main-content {
+            flex: 1 0 auto;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content-centered {
+            justify-content: center;
+        }
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #000;
+            margin: 0;
+        }
+        .input-section {
+            width: 100%;
+        }
+        .input-container {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            border: 1px solid #D1D1D1;
+            background-color: #FFF;
+            color: #000;
+            box-sizing: border-box;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        select {
+            appearance: none;
+            background: url("data:image/svg+xml;utf8,<svg fill='black' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>") no-repeat right 12px center;
+            background-size: 18px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .button-main {
+            width: 100%;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #000;
+            background-color: #000;
+            color: #FFF;
+            cursor: pointer;
+            text-align: center;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .footer {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            border-top: 1px solid #EAEAEA;
+            color: #888;
+            font-size: 0.8rem;
+            margin-top: auto;
+        }
+        
+        /* Output Styles */
+        .output-section {
+            width: 100%;
+        }
+        .section-title {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .context-section {
+            background-color: #F9F9F9;
+            border: 1px solid #EAEAEA;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .chip-button {
+            padding: 8px 16px;
+            font-size: 13px;
+            border: 1px solid #D1D1D1;
+            cursor: pointer;
+            background-color: #FFF;
+            color: #000;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .chip-button.active {
+            background-color: #000;
+            color: #FFF;
+            border-color: #000;
+        }
+        .output-container {
+            border: 1px solid #D1D1D1;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 2.1;
+            border-radius: 8px;
+            background-color: #F9F9F9;
+            min-height: 150px;
+        }
+        .metadata-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .tag {
+            background-color: #EAEAEA;
+            padding: 4px 10px;
+            font-size: 12px;
+            border-radius: 12px;
+        }
+        .score {
+            font-size: 12px;
+            color: #555;
+            font-weight: bold;
+        }
+        .main-action-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .main-action-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #000;
+            background-color: #FFF;
+            color: #000;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .copy-success {
+            font-size: 12px;
+            color: #28a745;
+            font-weight: bold;
+            transition: opacity 0.5s;
+            opacity: 0;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .refine-action-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .secondary-button {
+            padding: 10px 12px;
+            font-size: 13px;
+            border: 1px solid #D1D1D1;
+            background-color: #FFF;
+            color: #000;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid #EAEAEA;
+            margin: 2rem 0;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .spinner {
+            border: 4px solid #f0f0f0;
+            border-top: 4px solid #888;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        .analysis-container {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background-color: #F0F8FF;
+            border: 1px solid #B0E0E6;
+            border-radius: 8px;
+        }
+        .analysis-list {
+            padding-left: 20px;
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        button:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="page">
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+
+        <header class="header">
+             <svg style="width: 120px; height: auto;" viewBox="0 0 210 40" xmlns="http://www.w3.org/2000/svg">
+                <text x="50%" y="30" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="30" font-weight="bold" fill="#000000">PromptKit</text>
+             </svg>
+        </header>
+        
+        <main id="main-content" class="main-content main-content-centered">
+            <div class="input-section">
+                <div class="input-container">
+                    <label for="persona-select">1. Act As...</label>
+                    <select id="persona-select">
+                        <option>Marketing Expert</option>
+                        <option>Software Developer</option>
+                        <option>Academic Researcher</option>
+                        <option>Business Consultant</option>
+                        <option>Creative Writer</option>
+                        <option>Social Media Manager</option>
+                        <option>Legal Advisor</option>
+                        <option>Personal Tutor</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                    <input type="text" id="custom-persona-input" placeholder="Define a custom persona..." style="display: none; margin-top: 0.5rem;">
+                </div>
+                <div class="input-container">
+                     <label for="task-input">2. What do you want to do?</label>
+                    <input type="text" id="task-input" placeholder="e.g., Write a catchy tagline for a new coffee brand">
+                </div>
+                
+                <div class="context-section">
+                     <label>3. ✨ Add Context (Optional)</label>
+                     <input type="text" id="location-input" placeholder="Location (e.g., Pune, Maharashtra)" style="margin-bottom: 0.5rem;">
+                     <textarea id="interests-input" placeholder="Keywords or Interests (e.g., specialty coffee, local art)"></textarea>
+                </div>
+
+                <button id="generate-button" class="button-main">
+                    <span id="generate-button-text">Generate Prompt</span>
+                </button>
+            </div>
+
+            <div id="error-message" style="color: red; padding: 1rem; text-align: center; display: none;"></div>
+        
+            <div id="output-section" class="output-section" style="display: none;">
+                 <!-- This content will be generated by JavaScript -->
+            </div>
+        </main>
+
+        <footer class="footer">
+            © 2025 PromptKit • Crafted with lot of ♥ by AM.
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- State Management ---
+            let appState = {
+                persona: 'Marketing Expert',
+                customPersona: '',
+                task: '',
+                location: '',
+                interests: '',
+                isLoading: false,
+                isAnalyzing: false,
+                generatedPrompt: null,
+                activeVersion: 'V1',
+                promptAnalysis: null,
+            };
+
+            // --- DOM Elements ---
+            const mainContent = document.getElementById('main-content');
+            const personaSelect = document.getElementById('persona-select');
+            const customPersonaInput = document.getElementById('custom-persona-input');
+            const taskInput = document.getElementById('task-input');
+            const locationInput = document.getElementById('location-input');
+            const interestsInput = document.getElementById('interests-input');
+            const generateButton = document.getElementById('generate-button');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const errorMessageEl = document.getElementById('error-message');
+            const outputSection = document.getElementById('output-section');
+
+            // --- API Configuration ---
+            const API_KEY = "AIzaSyAziXMxrDG4ALLDMU4QT5DWmq0I3Bj83AU"; 
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+            
+            // --- API Call Logic ---
+            const callGeminiAPI = async (prompt, responseSchema) => {
+                let rawResponse = '';
+                try {
+                    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema } };
+                    const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error("Raw API error response:", errorText);
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+                    const result = await response.json();
+                    if (result.candidates?.[0]?.content?.parts?.[0]) {
+                        rawResponse = result.candidates[0].content.parts[0].text;
+                        const startIndex = rawResponse.indexOf('{');
+                        const endIndex = rawResponse.lastIndexOf('}');
+                        if (startIndex > -1 && endIndex > -1) {
+                            const jsonString = rawResponse.substring(startIndex, endIndex + 1);
+                            return JSON.parse(jsonString);
+                        }
+                    }
+                    throw new Error("Invalid response from AI.");
+                } catch (e) {
+                    console.error("API Call or JSON parsing failed:", e);
+                    errorMessageEl.textContent = `There was an issue with the AI's response. Please try again.`;
+                    errorMessageEl.style.display = 'block';
+                    return null;
+                }
+            };
+
+            // --- Render Logic ---
+            const renderOutput = () => {
+                if (!appState.generatedPrompt) {
+                    outputSection.style.display = 'none';
+                    mainContent.classList.add('main-content-centered');
+                    return;
+                }
+                
+                outputSection.style.display = 'block';
+                mainContent.classList.remove('main-content-centered');
+
+                const { versions, tags, clarityScore } = appState.generatedPrompt;
+                const currentVersion = versions?.find(v => v.version === appState.activeVersion);
+
+                outputSection.innerHTML = `
+                    <hr class="divider">
+                    <div class="section-title">Optimized Prompt</div>
+                    <div class="chip-container">
+                        ${(versions || []).map(v => `
+                            <button class="chip-button ${v.version === appState.activeVersion ? 'active' : ''}" data-version="${v.version}">
+                                ${v.version}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="metadata-container">
+                        <div class="score">Clarity Score: ${clarityScore !== undefined ? clarityScore : 0}/100</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                            ${(tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="output-container">${currentVersion?.text || 'Select a version to view.'}</div>
+                    <div class="main-action-container">
+                        <button class="main-action-button" id="copy-button-render">Copy Prompt</button>
+                        <button class="main-action-button" id="analyze-button-render">Analyze & Improve</button>
+                    </div>
+                    <div id="analysis-container-render" class="analysis-container" style="display: none;">
+                        <div class="section-title" style="margin-bottom: 1rem;">Analysis & Suggestions</div>
+                        <ul id="analysis-list-render" class="analysis-list"></ul>
+                    </div>
+                    <div class="section-title" style="margin-top: 2rem;">Refine Prompt</div>
+                    <div class="refine-action-container">
+                        <button class="secondary-button" data-refine="Make it Shorter">Make it Shorter</button>
+                        <button class="secondary-button" data-refine="Expand Thought">Expand Thought</button>
+                        <button class="secondary-button" data-refine="Simplify the prompt">Simplify</button>
+                        <button class="secondary-button" data-refine="Restructure the prompt">Restructure</button>
+                    </div>
+                `;
+                
+                // Re-add event listeners for newly created elements
+                addOutputEventListeners();
+            };
+
+            const updateLoadingState = (isLoading, isAnalyzing) => {
+                loadingOverlay.style.display = isLoading || isAnalyzing ? 'flex' : 'none';
+                generateButton.disabled = isLoading || isAnalyzing;
+                
+                const analyzeButtonRender = document.getElementById('analyze-button-render');
+                if(analyzeButtonRender) analyzeButtonRender.disabled = isLoading || isAnalyzing;
+
+                generateButton.innerHTML = isLoading ? '<div class="spinner" style="width: 16px; height: 16px; border-top-color: #FFF; border-width: 2px;"></div> Generating...' : '<span>Generate Prompt</span>';
+                if(analyzeButtonRender) {
+                    analyzeButtonRender.innerHTML = isAnalyzing ? '<div class="spinner" style="width: 16px; height: 16px; border-top-color: #333; border-width: 2px;"></div> Analyzing...' : 'Analyze & Improve';
+                }
+            };
+
+            // --- Event Handlers ---
+            const handleGenerate = async (modification = null) => {
+                const finalPersona = appState.persona === 'Custom' ? appState.customPersona : appState.persona;
+                if (!finalPersona || !appState.task) {
+                    errorMessageEl.textContent = "Please define both a persona and a task.";
+                    errorMessageEl.style.display = 'block';
+                    return;
+                }
+
+                updateLoadingState(true, false);
+                
+                let instruction;
+                if (modification && appState.generatedPrompt) {
+                    const basePromptText = appState.generatedPrompt.versions.find(v => v.version === appState.activeVersion)?.text || '';
+                    instruction = `Revise this prompt: "${basePromptText.replace(/"/g, '\\"')}" to be "${modification.replace(/"/g, '\\"')}". Generate three new versions (V1, V2, V3), tags, and a clarity score.`;
+                } else {
+                    let contextBlock = "";
+                    if(appState.location) contextBlock += `\n- User Location: ${appState.location}.`;
+                    if(appState.interests) contextBlock += `\n- User Interests/Keywords: ${appState.interests}.`;
+                    instruction = `Create a prompt for an AI. The AI should act as a ${finalPersona.replace(/"/g, '\\"')} to perform this task: "${appState.task.replace(/"/g, '\\"')}". ${contextBlock}\nThe prompt must be expertly crafted. Generate three distinct versions (V1, V2, V3), relevant tags, and a clarity score.`;
+                }
+
+                const systemPrompt = `You are a JSON API. Your ONLY output is a single, valid JSON object matching the schema. Do not add explanations. The user's request is: ${instruction}`;
+                const schema = { type: "OBJECT", properties: { versions: { type: "ARRAY", items: { type: "OBJECT", properties: { version: { type: "STRING" }, text: { type: "STRING" } }, required: ["version", "text"] } }, tags: { type: "ARRAY", items: { type: "STRING" } }, clarityScore: { type: "NUMBER" } }, required: ["versions", "tags", "clarityScore"] };
+                
+                const data = await callGeminiAPI(systemPrompt, schema);
+                
+                if (data) {
+                    appState.generatedPrompt = data;
+                    appState.activeVersion = 'V1';
+                    appState.promptAnalysis = null;
+                    renderOutput();
+                }
+                
+                updateLoadingState(false, false);
+            };
+
+            const handleAnalyze = async () => {
+                if (!appState.generatedPrompt) return;
+                const textToAnalyze = appState.generatedPrompt.versions.find(v => v.version === appState.activeVersion)?.text;
+                if (!textToAnalyze) return;
+
+                updateLoadingState(false, true);
+                
+                const systemPrompt = `Analyze this prompt: "${textToAnalyze.replace(/"/g, '\\"')}". Return a JSON object with a key "analysis" containing an array of strings with improvement suggestions.`;
+                const schema = { type: "OBJECT", properties: { analysis: { type: "ARRAY", items: { type: "STRING" } } } };
+                const data = await callGeminiAPI(systemPrompt, schema);
+                
+                if (data) {
+                    appState.promptAnalysis = data;
+                    const analysisContainerRender = document.getElementById('analysis-container-render');
+                    const analysisListRender = document.getElementById('analysis-list-render');
+                    if(analysisContainerRender && analysisListRender) {
+                        analysisContainerRender.style.display = 'block';
+                        analysisListRender.innerHTML = (data.analysis || []).map(item => `<li>${item}</li>`).join('');
+                    }
+                }
+                
+                updateLoadingState(false, false);
+            };
+
+            function addOutputEventListeners() {
+                document.querySelectorAll('.chip-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        appState.activeVersion = e.target.dataset.version;
+                        renderOutput();
+                    });
+                });
+                document.getElementById('copy-button-render')?.addEventListener('click', () => {
+                    const currentVersion = appState.generatedPrompt?.versions?.find(v => v.version === appState.activeVersion);
+                    if (currentVersion?.text) {
+                        const plainText = currentVersion.text.replace(/<[^>]*>/g, '');
+                        navigator.clipboard.writeText(plainText);
+                    }
+                });
+                document.getElementById('analyze-button-render')?.addEventListener('click', handleAnalyze);
+                document.querySelectorAll('.secondary-button').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        handleGenerate(e.target.dataset.refine);
+                    });
+                });
+            }
+
+            // --- Initial Event Listeners ---
+            personaSelect.addEventListener('change', (e) => {
+                appState.persona = e.target.value;
+                customPersonaInput.style.display = e.target.value === 'Custom' ? 'block' : 'none';
+            });
+            customPersonaInput.addEventListener('input', (e) => appState.customPersona = e.target.value);
+            taskInput.addEventListener('input', (e) => appState.task = e.target.value);
+            locationInput.addEventListener('input', (e) => appState.location = e.target.value);
+            interestsInput.addEventListener('input', (e) => appState.interests = e.target.value);
+            
+            generateButton.addEventListener('click', () => handleGenerate());
+
+            [taskInput, customPersonaInput, locationInput, interestsInput].forEach(input => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !appState.isLoading) {
+                        e.preventDefault();
+                        handleGenerate();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
