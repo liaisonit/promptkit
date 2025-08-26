@@ -75,7 +75,7 @@
         }
         textarea {
             resize: vertical;
-            min-height: 60px;
+            min-height: 80px;
         }
         .button-main {
             width: 100%;
@@ -233,7 +233,7 @@
             border-top: 1px solid #EAEAEA;
             margin: 2rem 0;
         }
-        .loading-overlay {
+        .loading-overlay, .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -244,6 +244,14 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+        }
+        .modal-content {
+            background-color: #FFF;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
         }
         .spinner {
             border: 4px solid #f0f0f0;
@@ -285,6 +293,9 @@
         <div id="loading-overlay" class="loading-overlay" style="display: none;">
             <div class="spinner"></div>
         </div>
+        <div id="modal-overlay" class="modal-overlay" style="display: none;">
+             <div id="modal-content" class="modal-content"></div>
+        </div>
 
         <header class="header">
              <svg style="width: 120px; height: auto;" viewBox="0 0 210 40" xmlns="http://www.w3.org/2000/svg">
@@ -297,25 +308,41 @@
                 <div class="input-container">
                     <label for="persona-select">1. Act As...</label>
                     <select id="persona-select">
-                        <option>Marketing Expert</option>
-                        <option>Software Developer</option>
-                        <option>Academic Researcher</option>
-                        <option>Business Consultant</option>
-                        <option>Creative Writer</option>
-                        <option>Social Media Manager</option>
-                        <option>Legal Advisor</option>
-                        <option>Personal Tutor</option>
+                        <optgroup label="Marketing & Sales">
+                            <option data-category="marketing" value="You are a Chief Marketing Officer with 15 years of experience at a top-tier global advertising agency, known for your brutally honest feedback and a no-nonsense, data-driven approach. You despise corporate jargon and prioritize clarity and impact above all else.">Marketing Expert</option>
+                            <option data-category="marketing" value="You are a senior brand strategist with a decade of experience at a top creative agency, known for a sharp, cynical wit and an ability to cut through corporate jargon to find the core message.">Brand Strategist</option>
+                        </optgroup>
+                        <optgroup label="Business & Productivity">
+                            <option data-category="business" value="You are a seasoned CEO of a successful tech startup. You are a strategic thinker, focused on growth, efficiency, and market disruption. Your communication is concise and authoritative.">CEO / Founder</option>
+                            <option data-category="business" value="You are a management consultant from a top-tier firm like McKinsey or BCG. You are highly analytical, structured in your thinking, and skilled at breaking down complex problems into actionable frameworks.">Management Consultant</option>
+                        </optgroup>
+                        <optgroup label="Creative & Content">
+                            <option data-category="creative" value="You are a seasoned novelist and creative writing professor with a deep understanding of plot, character development, and narrative structure.">Creative Writer</option>
+                        </optgroup>
+                        <optgroup label="Technical">
+                            <option data-category="technical" value="You are a 10x principal engineer at a FAANG company with a deep specialization in scalable backend systems and a disdain for inefficient code.">Principal Software Engineer</option>
+                        </optgroup>
+                        <optgroup label="AI Image Generation">
+                            <option data-category="image" value="You are an expert AI Image Prompt Engineer, skilled at crafting detailed, artistic prompts for models like Midjourney or DALL-E. You think in terms of composition, lighting, style, and technical parameters.">AI Image Prompt Engineer</option>
+                        </optgroup>
                         <option value="Custom">Custom</option>
                     </select>
-                    <input type="text" id="custom-persona-input" placeholder="Define a custom persona..." style="display: none; margin-top: 0.5rem;">
+                    <textarea id="custom-persona-input" placeholder="Define a custom persona in detail..." style="display: none; margin-top: 0.5rem; min-height: 80px;"></textarea>
                 </div>
                 <div class="input-container">
-                     <label for="task-input">2. What do you want to do?</label>
-                    <input type="text" id="task-input" placeholder="e.g., Write a catchy tagline for a new coffee brand">
+                    <label for="task-template-select">2.1 What do you want to do? (Choose a template)</label>
+                    <select id="task-template-select">
+                        <option value="">Select a task template...</option>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="input-container">
+                     <label for="task-input">2.2 Or, describe a custom task...</label>
+                    <textarea id="task-input" placeholder="e.g., Write a catchy tagline for a new coffee brand"></textarea>
                 </div>
                 
                 <div class="context-section">
-                     <label>3. ✨ Add Context (Optional)</label>
+                     <label>3. Add Context (Optional)</label>
                      <input type="text" id="location-input" placeholder="Location (e.g., Pune, Maharashtra)" style="margin-bottom: 0.5rem;">
                      <textarea id="interests-input" placeholder="Keywords or Interests (e.g., specialty coffee, local art)"></textarea>
                 </div>
@@ -341,7 +368,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- State Management ---
             let appState = {
-                persona: 'Marketing Expert',
+                persona: 'You are a Chief Marketing Officer with 15 years of experience at a top-tier global advertising agency, known for your brutally honest feedback and a no-nonsense, data-driven approach. You despise corporate jargon and prioritize clarity and impact above all else.',
                 customPersona: '',
                 task: '',
                 location: '',
@@ -353,20 +380,89 @@
                 promptAnalysis: null,
             };
 
+            // --- Template Data ---
+            const taskTemplates = {
+                marketing: {
+                    "Content Creation": {
+                        "Email Nurture Sequence": "Write a 5-part email sequence to nurture new subscribers and convert them to paying customers for [product/service].",
+                        "Viral Headlines": "Generate 10 viral-worthy headlines for a blog post about [topic].",
+                        "SEO Content Brief": "Create a detailed content brief for a 2000-word SEO article on the keyword '[keyword]'.",
+                    },
+                    "Strategy & Planning": {
+                        "Go-to-Market Strategy": "Develop a comprehensive go-to-market (GTM) strategy for a new SaaS product targeting [audience].",
+                        "Social Media Calendar": "Create a 3-month social media content calendar for a brand in the [industry] space.",
+                    }
+                },
+                business: {
+                    "Strategy": {
+                        "Business Idea Stress Test": "Analyze the following business idea and identify 5 potential weaknesses, market threats, and operational challenges: [business idea].",
+                        "Competitive Analysis": "Conduct a competitive analysis for a company in the [industry] space. Identify 3 key competitors and analyze their strengths, weaknesses, and market positioning.",
+                        "Quarterly Investor Update": "Draft a concise and compelling quarterly update for investors. Include key metrics like [MRR, CAC, LTV], recent wins for [product/company], challenges faced, and the strategic outlook for the next quarter.",
+                        "All-Hands Meeting Script": "Write a script for a 15-minute all-hands company meeting. The key message is [key message]. The tone should be inspiring and transparent.",
+                    },
+                    "Productivity": {
+                        "Meeting Summary": "Summarize the following meeting notes into key decisions and action items assigned to individuals: [paste notes here].",
+                        "Professional Email": "Draft a professional email to [recipient] about [subject], ensuring the tone is [tone, e.g., formal and persuasive].",
+                        "Delegation Memo": "Write a clear and concise memo delegating the [project name] project to [team member/department]. Outline the goals, key responsibilities, and deadline.",
+                    }
+                },
+                technical: {
+                    "Coding": {
+                        "Python Script": "Write a Python script to scrape data from [website] and save it as a CSV file. The script should extract [specific data points].",
+                        "Code Refactoring": "Analyze the following code snippet and suggest improvements for readability, efficiency, and maintainability:\n\n[paste code here]",
+                    },
+                    "Explanation": {
+                        "Explain Tech Concept": "Explain the concept of [technical concept, e.g., APIs] in a simple analogy that a non-technical person can easily understand.",
+                    }
+                },
+                creative: {
+                     "Writing": {
+                        "Story Plot Twist": "My story is about [brief story description]. The last thing that happened was [event]. Generate 3 unexpected plot twists to continue the story.",
+                        "Character Backstory": "Create a compelling backstory for a character who is a [character archetype, e.g., cynical detective] in a [genre, e.g., noir] setting.",
+                     }
+                },
+                image: {
+                    "Photography": {
+                        "Cinematic Portrait": "Create a cinematic, moody portrait of [subject] in [setting]. The lighting should be [lighting style, e.g., dramatic Rembrandt lighting]. Use a [lens type, e.g., 85mm f/1.4 lens] for a shallow depth of field. The overall mood should be [mood, e.g., introspective and melancholic].",
+                        "Magazine Cover Shot": "Generate a high-fashion magazine cover shot of [subject]. The style should be bold and glamorous, reminiscent of a Vogue cover. Use [color palette]. The composition should be [composition style, e.g., centered and powerful].",
+                        "Vintage Film Photo": "Create a photo of [subject] that looks like a vintage photograph from the [decade, e.g., 1970s]. The image should have a warm, faded color palette, film grain, and slight imperfections.",
+                    },
+                    "Artistic Styles": {
+                        "Studio Ghibli Style": "Illustrate [scene or character] in the beautiful, whimsical art style of Studio Ghibli. Focus on lush, detailed backgrounds and expressive character designs.",
+                        "Cyberpunk Cityscape": "Create a sprawling, neon-drenched cyberpunk cityscape at night. The scene should include flying vehicles, towering holographic advertisements, and a sense of gritty, futuristic atmosphere.",
+                        "Disney Animation Style": "A portrait of [subject] drawn in the classic 2D animation style of a Disney princess or prince. The character should have large, expressive eyes and a friendly demeanor, set against a magical, fairytale background.",
+                        "Pixar Animation Style": "A 3D character model of [subject] in the iconic style of Pixar Animation Studios. The character should be expressive, with detailed textures and lighting, suitable for an animated film.",
+                    },
+                    "Branded & Commercial": {
+                        "Luxury Car Ad": "A sleek, [color] [car model] in front of a modern architectural building at dusk. The style should be a high-end commercial advertisement for a brand like Audi or Mercedes-Benz.",
+                        "Fast Food Craving": "An extreme close-up, macro shot of a juicy hamburger. The background is a vibrant, slightly blurred McDonald's or Burger King restaurant setting. The style is hyper-realistic and appetizing.",
+                        "Coffee Shop Ambiance": "A cozy, warm interior of a Starbucks coffee shop on a rainy day. A person, [subject], is sitting by the window, holding a branded coffee cup.",
+                        "Athletic Apparel Action Shot": "An athlete, [subject], in mid-motion, captured with a high-speed camera, wearing Nike or Adidas apparel in a dynamic, urban environment.",
+                        "Shell Gas Station at Night": "A cinematic shot of a classic [car model] at a brightly lit Shell petrol pump at night. The scene is moody, with wet pavement reflecting the neon lights.",
+                        "IKEA Room Scene": "A beautifully designed, modern living room scene, fully furnished with IKEA furniture in a Scandinavian, minimalist style.",
+                        "Coca-Cola Lifestyle Ad": "A group of diverse, happy young people, [subjects], laughing and drinking Coca-Cola from classic glass bottles at a sunny, outdoor festival.",
+                        "Red Bull Extreme Sports": "An action shot of an athlete performing an extreme sport (e.g., skateboarding, snowboarding) with Red Bull branding prominently visible."
+                    }
+                }
+            };
+
             // --- DOM Elements ---
             const mainContent = document.getElementById('main-content');
             const personaSelect = document.getElementById('persona-select');
             const customPersonaInput = document.getElementById('custom-persona-input');
+            const taskTemplateSelect = document.getElementById('task-template-select');
             const taskInput = document.getElementById('task-input');
             const locationInput = document.getElementById('location-input');
             const interestsInput = document.getElementById('interests-input');
             const generateButton = document.getElementById('generate-button');
             const loadingOverlay = document.getElementById('loading-overlay');
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalContent = document.getElementById('modal-content');
             const errorMessageEl = document.getElementById('error-message');
             const outputSection = document.getElementById('output-section');
 
             // --- API Configuration ---
-            const API_KEY = "AIzaSyAziXMxrDG4ALLDMU4QT5DWmq0I3Bj83AU"; 
+            const API_KEY = "AIzaSyDU7HibGXYCw_wTrNT5-kTFQMS0HM3md4Q"; 
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
             
             // --- API Call Logic ---
@@ -429,7 +525,7 @@
                             ${(tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
                         </div>
                     </div>
-                    <div class="output-container">${currentVersion?.text || 'Select a version to view.'}</div>
+                    <div class="output-container" id="prompt-text-container">${currentVersion?.text || 'Select a version to view.'}</div>
                     <div class="main-action-container">
                         <button class="main-action-button" id="copy-button-render">Copy Prompt</button>
                         <button class="main-action-button" id="analyze-button-render">Analyze & Improve</button>
@@ -447,7 +543,7 @@
                     </div>
                 `;
                 
-                // Re-add event listeners for newly created elements
+                document.getElementById('prompt-text-container').innerHTML = currentVersion?.text || 'Select a version to view.';
                 addOutputEventListeners();
             };
 
@@ -465,9 +561,11 @@
             };
 
             // --- Event Handlers ---
-            const handleGenerate = async (modification = null) => {
-                const finalPersona = appState.persona === 'Custom' ? appState.customPersona : appState.persona;
-                if (!finalPersona || !appState.task) {
+            const handleGenerate = async (modification = null, filledTask = null) => {
+                const finalPersona = personaSelect.value === 'Custom' ? customPersonaInput.value.trim() : personaSelect.value;
+                const currentTask = filledTask || taskInput.value.trim();
+
+                if (!finalPersona || !currentTask) {
                     errorMessageEl.textContent = "Please define both a persona and a task.";
                     errorMessageEl.style.display = 'block';
                     return;
@@ -478,12 +576,12 @@
                 let instruction;
                 if (modification && appState.generatedPrompt) {
                     const basePromptText = appState.generatedPrompt.versions.find(v => v.version === appState.activeVersion)?.text || '';
-                    instruction = `Revise this prompt: "${basePromptText.replace(/"/g, '\\"')}" to be "${modification.replace(/"/g, '\\"')}". Generate three new versions (V1, V2, V3), tags, and a clarity score.`;
+                    instruction = `Based on this prompt: "${basePromptText.replace(/"/g, '\\"')}", modify it like this: "${modification.replace(/"/g, '\\"')}". Generate three new versions (V1, V2, V3), tags, and a new clarity score. The response must be humanised.`;
                 } else {
                     let contextBlock = "";
-                    if(appState.location) contextBlock += `\n- User Location: ${appState.location}.`;
-                    if(appState.interests) contextBlock += `\n- User Interests/Keywords: ${appState.interests}.`;
-                    instruction = `Create a prompt for an AI. The AI should act as a ${finalPersona.replace(/"/g, '\\"')} to perform this task: "${appState.task.replace(/"/g, '\\"')}". ${contextBlock}\nThe prompt must be expertly crafted. Generate three distinct versions (V1, V2, V3), relevant tags, and a clarity score.`;
+                    if(locationInput.value) contextBlock += `\n- User Location: ${locationInput.value}.`;
+                    if(interestsInput.value) contextBlock += `\n- User Interests/Keywords: ${interestsInput.value}.`;
+                    instruction = `Create a prompt for an AI. The AI should act as a ${finalPersona.replace(/"/g, '\\"')} to perform this task: "${currentTask.replace(/"/g, '\\"')}". ${contextBlock}\nThe prompt must be expertly crafted for advanced models like GPT-5 and Gemini 2.5. It must be substantially detailed and include professional techniques like Chain-of-Thought reasoning. Generate three distinct versions (V1, V2, V3), relevant tags, and a clarity score. The final output from the generated prompt must be humanised and natural.`;
                 }
 
                 const systemPrompt = `You are a JSON API. Your ONLY output is a single, valid JSON object matching the schema. Do not add explanations. The user's request is: ${instruction}`;
@@ -546,27 +644,116 @@
                     });
                 });
             }
+            
+            function populateTaskTemplates(category) {
+                taskTemplateSelect.innerHTML = '<option value="">Select a task template...</option>';
+                if (!category || !taskTemplates[category]) return;
+
+                const categoryTasks = taskTemplates[category];
+                for (const groupName in categoryTasks) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = groupName;
+                    for (const taskName in categoryTasks[groupName]) {
+                        const option = document.createElement('option');
+                        option.value = categoryTasks[groupName][taskName];
+                        option.textContent = taskName;
+                        optgroup.appendChild(option);
+                    }
+                    taskTemplateSelect.appendChild(optgroup);
+                }
+            }
+            
+            function showPlaceholderModal(taskText) {
+                const placeholders = [...taskText.matchAll(/\[(.*?)\]/g)].map(match => match[1]);
+                if (placeholders.length === 0) {
+                    handleGenerate(null, taskText);
+                    return;
+                }
+
+                modalContent.innerHTML = `<h3 class="section-title">Complete your prompt</h3>`;
+                const form = document.createElement('form');
+                
+                placeholders.forEach(ph => {
+                    const inputGroup = document.createElement('div');
+                    inputGroup.className = 'input-container';
+                    const label = document.createElement('label');
+                    label.textContent = ph.charAt(0).toUpperCase() + ph.slice(1);
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = `modal-input-${ph}`;
+                    inputGroup.appendChild(label);
+                    inputGroup.appendChild(input);
+                    form.appendChild(inputGroup);
+                });
+
+                const button = document.createElement('button');
+                button.textContent = 'Continue Generation';
+                button.className = 'button-main';
+                button.type = 'submit';
+                form.appendChild(button);
+
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    let filledTask = taskText;
+                    placeholders.forEach(ph => {
+                        const inputEl = document.getElementById(`modal-input-${ph}`);
+                        filledTask = filledTask.replace(`[${ph}]`, inputEl.value);
+                    });
+                    modalOverlay.style.display = 'none';
+                    handleGenerate(null, filledTask);
+                };
+
+                modalContent.appendChild(form);
+                modalOverlay.style.display = 'flex';
+            }
 
             // --- Initial Event Listeners ---
             personaSelect.addEventListener('change', (e) => {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                const category = selectedOption.dataset.category;
+                
                 appState.persona = e.target.value;
                 customPersonaInput.style.display = e.target.value === 'Custom' ? 'block' : 'none';
+                if (e.target.value !== 'Custom') {
+                    customPersonaInput.value = '';
+                    appState.customPersona = '';
+                }
+                populateTaskTemplates(category);
+            });
+            taskTemplateSelect.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    taskInput.value = e.target.value;
+                    appState.task = e.target.value;
+                }
             });
             customPersonaInput.addEventListener('input', (e) => appState.customPersona = e.target.value);
-            taskInput.addEventListener('input', (e) => appState.task = e.target.value);
+            taskInput.addEventListener('input', (e) => {
+                appState.task = e.target.value;
+                taskTemplateSelect.value = ''; // Reset template dropdown if user types manually
+            });
             locationInput.addEventListener('input', (e) => appState.location = e.target.value);
             interestsInput.addEventListener('input', (e) => appState.interests = e.target.value);
             
-            generateButton.addEventListener('click', () => handleGenerate());
+            generateButton.addEventListener('click', () => {
+                const taskText = taskInput.value;
+                if (taskText.includes('[')) {
+                    showPlaceholderModal(taskText);
+                } else {
+                    handleGenerate();
+                }
+            });
 
             [taskInput, customPersonaInput, locationInput, interestsInput].forEach(input => {
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' && !appState.isLoading) {
                         e.preventDefault();
-                        handleGenerate();
+                        generateButton.click();
                     }
                 });
             });
+
+            // Initial population
+            populateTaskTemplates('marketing');
         });
     </script>
 </body>
